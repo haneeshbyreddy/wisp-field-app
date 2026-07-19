@@ -52,7 +52,21 @@ jobs:
           export VERSION_NAME="${GITHUB_REF_NAME#v}"
           cd android
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+          exit "${PIPESTATUS[0]}"
+
+      - name: Upload failure log as prerelease asset
+        # Debugging rail for a box without repo-log credentials: prereleases
+        # are excluded from releases/latest, so central's APK mirror (and any
+        # 'latest' consumer) can never pick this up.
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "$RUNNER_TEMP/gradle.log" gradle-failure.log
+          gh release create "debug-run-${GITHUB_RUN_ID}" gradle-failure.log \
+            --prerelease --title "CI failure log (run ${GITHUB_RUN_ID})" \
+            --notes "auto-uploaded gradle log; safe to delete" || true
 
       - name: Publish GitHub release
         env:

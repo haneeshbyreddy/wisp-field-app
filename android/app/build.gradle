@@ -29,8 +29,8 @@ android {
                 storeFile file(ksPath)
                 storeType "pkcs12"
                 storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "wispfield"
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias (System.getenv("RELEASE_KEY_ALIAS") ?: "wispfield")
+                keyPassword (System.getenv("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEYSTORE_PASSWORD"))
             }
         }
     }
