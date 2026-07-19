@@ -1,0 +1,65 @@
+name: release
+
+# Tag vX.Y.Z -> signed APK on the GitHub release. Central mirrors the asset to
+# https://hansanet.in/download/app/wisp-field.apk (stable URL for workers).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install deps and sync Capacitor
+        run: |
+          npm ci
+          npx cap sync android
+
+      - name: Decode signing keystore
+        env:
+          KS_B64: ${{ secrets.RELEASE_KEYSTORE_B64 }}
+        run: |
+          # Refuse to ship unsigned: an unsigned APK won't install, and a
+          # debug-signed one breaks in-place upgrades (different key per run).
+          if [ -z "$KS_B64" ]; then
+            echo "RELEASE_KEYSTORE_B64 secret is not set" >&2
+            exit 1
+          fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+
+      - name: Build signed release APK
+        env:
+          RELEASE_KEYSTORE: ${{ runner.temp }}/release.p12
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: wispfield
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          export VERSION_NAME="${GITHUB_REF_NAME#v}"
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk wisp-field.apk
+          sha256sum wisp-field.apk > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" wisp-field.apk SHA256SUMS \
+            --title "WISP Field $GITHUB_REF_NAME" \
+            --notes "Signed Android APK. Stable download: https://hansanet.in/download/app/wisp-field.apk"

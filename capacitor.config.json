@@ -1,0 +1,9 @@
+{
+  "appId": "com.hansanet.field",
+  "appName": "WISP Field",
+  "webDir": "www",
+  "server": {
+    "url": "https://hansanet.in/app",
+    "cleartext": false
+  }
+}
