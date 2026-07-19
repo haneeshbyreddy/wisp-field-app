@@ -77,3 +77,6 @@ jobs:
           gh release create "$GITHUB_REF_NAME" wisp-field.apk SHA256SUMS \
             --title "WISP Field $GITHUB_REF_NAME" \
             --notes "Signed Android APK. Stable download: https://hansanet.in/download/app/wisp-field.apk"
+          # a green build makes earlier failure-log prereleases stale — clean them
+          gh release list --json tagName -q '.[].tagName' | grep '^debug-run-' |
+            xargs -r -n1 gh release delete -y --cleanup-tag || true

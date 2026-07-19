@@ -10,8 +10,8 @@ android {
         // CI stamps these from the release tag (VERSION_NAME) and the
         // monotonically increasing run number (VERSION_CODE) — an in-place
         // Android upgrade requires versionCode to grow every release.
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
-        versionName (System.getenv("VERSION_NAME") ?: "0.0.0-dev")
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionName = (System.getenv("VERSION_NAME") ?: "0.0.0-dev")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
